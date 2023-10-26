@@ -203,3 +203,153 @@ HTML;
 }
 add_shortcode('wps_single_page_page_title', 'wps_single_page_page_title');
 
+//Phone Number
+function wps_phone_number($atts) {
+	$phone_number = get_field('business_phone_number', 'option');
+	$output = '<a href="tel:' . $phone_number . '">' . $phone_number . '</a>';
+	return $output;
+}
+add_shortcode('wps_phone_number', 'wps_phone_number');
+
+//Phone Number Parts
+function wps_phone_number_parts($atts) {
+	$phone_number_parts = get_field('business_phone_number_for_parts', 'option');
+	$output = '<a href="tel:' . $phone_number_parts . '">' . $phone_number_parts . '</a>';
+	return $output;
+}
+add_shortcode('wps_phone_number_parts', 'wps_phone_number_parts');
+
+//email address
+function wps_email_address($atts) {
+	$email_address = get_field('business_email_address', 'option');
+	$output = '<a href="mailto:' . $email_address . '">' . $email_address . '</a>';
+	return $output;
+}
+add_shortcode('wps_email_address', 'wps_email_address');
+
+//email address parts
+function wps_email_address_parts($atts) {
+	$email_address_parts = get_field('business_email_address_for_parts', 'option');
+	$output = '<a href="mailto:' . $email_address_parts . '">' . $email_address_parts . '</a>';
+	return $output;
+}
+add_shortcode('wps_email_address_parts', 'wps_email_address_parts');
+
+function wps_physical_address($atts) {
+	$physical_address = get_field('business_physical_address', 'option');
+	$output =  $physical_address;
+	return $output;
+}
+add_shortcode('wps_physical_address', 'wps_physical_address');
+
+
+
+// Get Single Repeater Items
+// This gets the repeater items with links
+// usage [wps_get_repeater_items_with_links repeater_field_name="single_page_service_areas_list" item_name="single_page_service_area_name" item_link="single_page_service_area_link"]
+// includ source="option" if the repeater field is in options page
+
+function wps_get_repeater_items_with_links($atts) {
+    $atts = shortcode_atts(array(
+        'repeater_field_name' => '', // Default field name
+        'item_name' => '', // Default item name field
+        'item_link' => '', // Default item link field
+		'open_new_tab' => '',
+        'source' => 'page', // Default source if getting fields from options page then pass 'option' as source
+    ), $atts);
+
+    $repeater_field = get_field($atts['repeater_field_name']);
+
+    if($atts['source'] === 'option') {
+        $repeater_field = get_field($atts['repeater_field_name'], 'option');
+    }
+    
+    $output = '';
+    if ($repeater_field) {
+        $output = '<ul class="dashed-border-list">';
+
+        foreach ($repeater_field as $item) {
+            $item_name = esc_html($item[$atts['item_name']]);
+            $item_link = esc_url($item[$atts['item_link']]);
+            $open_new_tab = $item[$atts['open_new_tab']]; // Retrieve the open in new tab field for the specific repeater item
+	$link_target = '';
+
+            if ($item_name && $item_link) {
+				if($open_new_tab === true) {
+					$link_target = 'target="_blank"';
+				}
+                $output .= '<li class="list-no-icon"><i class="fas fa-caret-right"></i> <a href="' . $item_link . '" ' . $link_target . '>' . $item_name . '</a></li>';
+            }
+        }
+
+        $output .= '</ul>';
+    }
+
+    return $output;
+}
+
+add_shortcode('wps_get_repeater_items_with_links', 'wps_get_repeater_items_with_links');
+
+// Show and hide extra sections using shortcodes
+//Render extra sections on Single Page
+
+function wps_single_page_render_extra_sections ($atts) {
+	$is_extra_section_enabled = get_field('single_page_enable_extra_sections');
+	$extra_section_1_title = get_field('single_page_extra_section_1_title'); 
+	$extra_section_1_text = get_field('single_page_extra_section_1_text'); 
+	$extra_section_2_title = get_field('single_page_extra_section_2_title');
+	$extra_section_2_text = get_field('single_page_extra_section_2_text');
+	
+	//make sure it is enabled and fields are NOT empty
+	if($is_extra_section_enabled === true) {
+	
+    if (!empty($extra_section_1_title) 
+		&& !empty($extra_section_1_text) 
+		&& !empty($extra_section_2_title)
+	    && !empty($extra_section_2_text)
+	   )
+		
+		echo do_shortcode('[elementor-template id="33020"]');
+		
+		}
+}
+add_shortcode('wps_render_extra_sections', 'wps_single_page_render_extra_sections');
+
+
+// Show and hide service areas on single page using shortcode
+function wps_single_page_render_service_areas ($atts) {
+$is_service_areas_enabled = get_field('single_page_show_service_areas');
+
+if($is_service_areas_enabled === true) {
+    echo do_shortcode('[elementor-template id="33043"]');
+}
+}
+add_shortcode('wps_render_service_areas', 'wps_single_page_render_service_areas');
+
+// shortcode to display either default text or text from single page
+// Requires 3 ACF fields
+// 1. default text field (must be in Website settings) // options page
+// 2. single page text field (usually in Single Page)
+// 3. single page checkbox field to enable/disable the single page text
+
+function wps_default_vs_page_text ($atts) {
+    $atts = shortcode_atts( array(
+        'default_text' => 'default_text_1', // Default text
+        'page_text' => 'single_page_text_1', // Default text on page
+        'is_enabled' => 'single_page_change_default_text', // Default text on page
+    ), $atts);
+
+    $default_text = get_field($atts['default_text'], 'option');
+    $page_text = get_field($atts['page_text']);
+    $is_page_text_enabled = get_field($atts['is_enabled']);
+    $output = '';
+
+    if ($is_page_text_enabled === true && !empty($page_text)) {
+        $output = $page_text;
+    } else {
+        $output = $default_text;
+    }
+    return $output;
+}
+
+add_shortcode( 'wps_default_vs_page_text', 'wps_default_vs_page_text' );
